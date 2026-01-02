@@ -26,14 +26,6 @@ A functional clone of Wispr Flow, built with Tauri, React, FastAPI, and Deepgram
 - Rust (for Tauri compilation) - **Required for desktop app**
 - Deepgram API key
 
-### Installing Rust (Required for Tauri)
-
-**Windows:**
-
-1. Download and run the installer from: https://rustup.rs/
-2. Or use winget: `winget install Rustlang.Rustup`
-3. After installation, restart your terminal/PowerShell
-4. Verify installation: `cargo --version`
 
 **Alternative:** If you just want to test the web version without Tauri, you can run `npm run dev` instead of `npm run tauri:dev`
 
@@ -59,11 +51,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
-
-**Note for Windows:** PyTorch installation may take a few minutes. If you encounter issues:
-- Ensure you have Python 3.8 or higher
-- PyTorch will automatically download the appropriate CPU/GPU version
-- Silero VAD model will be downloaded automatically on first run
 
 4. Create a `.env` file:
 
@@ -100,8 +87,6 @@ npm install
 
 3. **Option A: Run as Desktop App (Tauri - requires Rust)**
 
-   First, ensure Rust is installed (see Prerequisites above).
-
    Install Tauri CLI (if not already installed):
 
    ```bash
@@ -123,8 +108,6 @@ npm install
    ```
 
    Then open http://localhost:1420 in your browser.
-
-   **Note:** For web version, you may need to configure CORS in the backend to allow your browser origin, or use a browser extension to bypass CORS restrictions during development.
 
 ## Usage
 
@@ -165,65 +148,8 @@ EchoText/
 - **DEEPGRAM_API_KEY**: Your Deepgram API key (required)
 - **BACKEND_PORT**: Port for the FastAPI server (default: 8000)
 
-### Frontend
-
-- **Backend URL**: Configured in `src/hooks/useTranscription.js` (default: http://localhost:8000)
-- **VAD Threshold**: Configured in `src/hooks/useVAD.js` (default: 0.01)
-- **Audio Settings**: Configured in `src/hooks/useAudioCapture.js` (default: 16kHz, mono, 16-bit)
-
-## Troubleshooting
-
-### Microphone Permission Issues
-
-- Ensure your browser/system has granted microphone permissions
-- Check system privacy settings for microphone access
-
-### Connection Issues
-
-- Verify the backend server is running on port 8000
-- Check that CORS is properly configured
-- Ensure WebSocket connections are not blocked by firewall
-
-### Transcription Not Working
-
-- Verify your Deepgram API key is correct
-- Check backend logs for errors
-- Ensure audio is being captured (check browser console)
-
-## Development
-
-### Running Tests
-
-Tests can be added for:
-
-- VAD accuracy
-- Audio capture functionality
-- WebSocket connection handling
-- Transcription accuracy
-
-### Building for Production
-
-**Backend:**
-
-```bash
-cd backend
-pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-npm run tauri build
-```
 
 ## License
 
-This project is for educational purposes.
+Educational/personal use.
 
-## Acknowledgments
-
-- Deepgram for speech recognition API
-- Tauri for desktop app framework
-- FastAPI for backend framework
