@@ -1,31 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export function TranscriptionDisplay({ transcript, onInsert, onClear }) {
   const [copied, setCopied] = useState(false);
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (transcript !== undefined) {
+      setText(transcript);
+    }
+  }, [transcript]);
 
   const handleCopy = async () => {
-    if (!transcript) return;
-
-    try {
-      await navigator.clipboard.writeText(transcript);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy text:", err);
-    }
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  const handleInsert = () => {
-    if (onInsert && transcript) {
-      onInsert(transcript);
-    }
-  };
-
+  
   const handleClear = () => {
-    if (onClear) {
-      onClear();
-    }
+    setText("");
+    onClear?.();
   };
+  
 
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
@@ -77,24 +73,20 @@ export function TranscriptionDisplay({ transcript, onInsert, onClear }) {
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="bg-black/50 rounded-xl p-6 min-h-[200px] border border-amber-800/20">
-            {transcript ? (
-              <p className="text-gray-200 whitespace-pre-wrap break-words leading-relaxed text-base">
-                {transcript}
-              </p>
-            ) : (
-              <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
-                <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-                <p className="text-gray-400 italic text-lg">
-                  Your transcription will appear here...
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-                  Start recording to see transcribed text
-                </p>
-              </div>
-            )}
+          <div className="rounded-xl min-h-[200px] ">            
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Your transcription will appear here..."
+              className="
+                w-full h-full resize-none
+                bg-black/50 text-gray-200
+                rounded-xl p-6
+                border border-amber-800/20
+                focus:outline-none focus:ring-2 focus:ring-amber-600
+                leading-relaxed text-base
+              "
+            />
           </div>
         </div>
       </div>
