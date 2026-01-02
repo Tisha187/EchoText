@@ -1,6 +1,6 @@
 # EchoText - Voice-to-Text Transcription App
 
-A functional clone of Wispr Flow, built with Tauri, React, FastAPI, and Deepgram ASR. This application provides real-time voice-to-text transcription with push-to-talk functionality.
+A desktop voice transcription app inspired by Wispr Flow, built with Tauri, React, FastAPI, and Deepgram ASR. This application provides real-time voice-to-text transcription with push-to-talk functionality.
 
 ## Features
 
