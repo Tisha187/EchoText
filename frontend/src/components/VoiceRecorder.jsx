@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRe
 import { useAudioCapture } from "../hooks/useAudioCapture";
 import { useTranscription } from "../hooks/useTranscription";
 
-export const VoiceRecorder = forwardRef(function VoiceRecorder({ onTranscriptUpdate, onRecordingStateChange }, ref) {
+export const VoiceRecorder = forwardRef(function VoiceRecorder({ onTranscriptUpdate, onRecordingStateChange, onStart, onStop, isRecording: externalIsRecording, error: externalError }, ref) {
   console.log("=== VoiceRecorder Component Mounted ===");
   
   const [isPushToTalk, setIsPushToTalk] = useState(false);
@@ -112,7 +112,8 @@ export const VoiceRecorder = forwardRef(function VoiceRecorder({ onTranscriptUpd
     startRecording: handlePushToTalkStart,
     stopRecording: handlePushToTalkStop,
     isRecording: isRecording,
-  }), [handlePushToTalkStart, handlePushToTalkStop, isRecording]);
+    clearTranscript: transcription.clearTranscript,
+  }), [handlePushToTalkStart, handlePushToTalkStop, isRecording, transcription.clearTranscript]);
 
   // Update parent component with transcript
   useEffect(() => {
@@ -147,31 +148,35 @@ export const VoiceRecorder = forwardRef(function VoiceRecorder({ onTranscriptUpd
     };
   }, [isPushToTalk, handlePushToTalkStart, handlePushToTalkStop]);
 
+  const displayIsRecording = isRecording || externalIsRecording;
+  const displayError = connectionError || transcription.error || audioCapture.error || externalError;
+
   return (
-    <div className="flex flex-col items-center gap-6">
-      {connectionError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {connectionError}
+    <div className="flex flex-col items-center gap-6 w-full">
+      {/* Error Messages */}
+      {displayError && (
+        <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg backdrop-blur-sm w-full">
+          <p className="text-sm font-medium">{displayError}</p>
         </div>
       )}
 
-      {transcription.error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md">
-          <p className="font-semibold">Transcription Error:</p>
-          <p className="text-sm mt-1">{transcription.error}</p>
-          <p className="text-xs mt-2 text-red-600">
-            Troubleshooting: Check that the backend server is running and your Deepgram API key is configured correctly.
-          </p>
+      {/* Status Messages */}
+      {transcription.isConnecting && (
+        <div className="flex items-center gap-2 text-amber-400 text-sm">
+          <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+          <span>Connecting to transcription service...</span>
         </div>
       )}
 
-      {audioCapture.error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {audioCapture.error}
+      {transcription.isConnected && !displayIsRecording && (
+        <div className="flex items-center gap-2 text-gray-300 text-sm">
+          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          <span>Ready to record</span>
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-4">
+      {/* Main Recording Button */}
+      <div className="flex flex-col items-center gap-6 w-full">
         <button
           onMouseDown={handlePushToTalkStart}
           onMouseUp={handlePushToTalkStop}
@@ -184,33 +189,88 @@ export const VoiceRecorder = forwardRef(function VoiceRecorder({ onTranscriptUpd
             handlePushToTalkStop();
           }}
           className={`
-            w-32 h-32 rounded-full font-bold text-lg transition-all
+            w-40 h-40 rounded-full font-bold text-lg transition-all duration-300
             ${
-              isRecording
-                ? "bg-red-500 hover:bg-red-600 scale-110 shadow-lg"
-                : "bg-blue-500 hover:bg-blue-600"
+              displayIsRecording
+                ? "bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 scale-110 shadow-2xl shadow-red-500/50 ring-4 ring-red-500/30"
+                : "bg-gradient-to-br from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 shadow-xl shadow-amber-700/30 hover:shadow-amber-700/50"
             }
             text-white
-            focus:outline-none focus:ring-4 focus:ring-blue-300
+            focus:outline-none focus:ring-4 focus:ring-amber-600/50
             active:scale-95
+            transform
           `}
         >
-          {isRecording ? "Recording..." : "Hold to Talk"}
+          {displayIsRecording ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-6 h-6 bg-white rounded-full animate-pulse"></div>
+              <span>Recording</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+              </svg>
+              <span>Hold to Talk</span>
+            </div>
+          )}
         </button>
 
-        <p className="text-sm text-gray-600">
-          {isRecording
+        <p className="text-gray-400 text-sm text-center">
+          {displayIsRecording
             ? "Release to stop recording"
             : "Hold the button or press Spacebar to record"}
         </p>
+      </div>
 
-        {transcription.isConnecting && (
-          <p className="text-sm text-blue-600">Connecting to transcription service...</p>
-        )}
+      {/* Start/Stop Buttons */}
+      <div className="flex flex-col gap-3 w-full mt-4">
+        <div className="h-px bg-gradient-to-r from-transparent via-amber-800/30 to-transparent"></div>
+        <div className="flex gap-3">
+          <button
+            onClick={onStart || handlePushToTalkStart}
+            disabled={displayIsRecording}
+            className={`
+              flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200
+              ${
+                displayIsRecording
+                  ? "bg-gray-800/50 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white shadow-lg shadow-amber-700/30 hover:shadow-amber-700/50 transform hover:scale-105 active:scale-95"
+              }
+            }
+          `}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Start</span>
+            </div>
+          </button>
 
-        {transcription.isConnected && !isRecording && (
-          <p className="text-sm text-green-600">Ready to record</p>
-        )}
+          <button
+            onClick={onStop || handlePushToTalkStop}
+            disabled={!displayIsRecording}
+            className={`
+              flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200
+              ${
+                !displayIsRecording
+                  ? "bg-gray-800/50 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transform hover:scale-105 active:scale-95"
+              }
+            }
+          `}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10h6v4H9z" />
+              </svg>
+              <span>Stop</span>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
